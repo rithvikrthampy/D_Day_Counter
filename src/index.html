@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sci-Fi Chrono Widget</title>
+    <!-- Google Fonts for futuristic look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <!-- The main widget panel -->
+    <div class="widget-container theme-cyan" id="widget-container">
+      
+      <!-- Tech Scanline Overlay -->
+      <div class="scanlines"></div>
+      
+      <!-- Tech Grid Pattern -->
+      <div class="grid-overlay"></div>
+
+      <!-- Cyber Corners -->
+      <div class="cyber-corner top-left"></div>
+      <div class="cyber-corner top-right"></div>
+      <div class="cyber-corner bottom-left"></div>
+      <div class="cyber-corner bottom-right"></div>
+
+      <!-- Widget Header (Draggable) -->
+      <header class="widget-header" data-tauri-drag-region>
+        <div class="sys-title" data-tauri-drag-region>
+          <span class="status-indicator-pulse"></span>
+          <span class="tech-text" data-tauri-drag-region>SYS.CHRONO // WIDGET</span>
+        </div>
+        <div class="window-controls">
+          <button class="win-btn" id="btn-settings" title="Settings">⚙</button>
+          <button class="win-btn" id="btn-minimize" title="Minimize">—</button>
+          <button class="win-btn close-btn" id="btn-close" title="Close">×</button>
+        </div>
+      </header>
+
+      <!-- Main Widget Body -->
+      <main class="widget-body">
+        <!-- Event Name -->
+        <div class="event-header" id="event-name-display">
+          INITIALIZING...
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="countdown-grid">
+          <div class="time-block">
+            <span class="time-val" id="days-val">00</span>
+            <span class="time-lbl">DAYS</span>
+          </div>
+          <div class="time-separator">:</div>
+          <div class="time-block">
+            <span class="time-val" id="hours-val">00</span>
+            <span class="time-lbl">HRS</span>
+          </div>
+          <div class="time-separator">:</div>
+          <div class="time-block">
+            <span class="time-val" id="minutes-val">00</span>
+            <span class="time-lbl">MINS</span>
+          </div>
+          <div class="time-separator">:</div>
+          <div class="time-block">
+            <span class="time-val" id="seconds-val">00</span>
+            <span class="time-lbl">SECS</span>
+          </div>
+        </div>
+
+        <!-- Cyber Progress Bar -->
+        <div class="progress-bar-container">
+          <div class="progress-info">
+            <span class="progress-lbl">TIME TACTICAL INDEX</span>
+            <span class="progress-pct" id="progress-pct-val">100.0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill-bar" style="width: 100%;"></div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Settings Overlay Panel -->
+      <div class="settings-overlay" id="settings-panel">
+        <div class="settings-header" data-tauri-drag-region>
+          <span class="tech-text" data-tauri-drag-region>CONFIG.SYS // PANEL</span>
+          <button class="close-settings" id="btn-close-settings">×</button>
+        </div>
+        <div class="settings-body">
+          <div class="form-group">
+            <label for="input-event-name">EVENT IDENTIFIER</label>
+            <input type="text" id="input-event-name" placeholder="E.g., SYSTEM ONLINE" maxlength="32" />
+          </div>
+          <div class="form-group">
+            <label for="input-target-date">TARGET TIMESTAMP</label>
+            <input type="datetime-local" id="input-target-date" />
+          </div>
+          <div class="form-group">
+            <label>NEON ENERGY THEME</label>
+            <div class="theme-picker">
+              <button class="theme-opt cyan active" data-theme="theme-cyan" title="Cyber Cyan"></button>
+              <button class="theme-opt orange" data-theme="theme-orange" title="Solar Orange"></button>
+              <button class="theme-opt green" data-theme="theme-green" title="Bio Green"></button>
+              <button class="theme-opt magenta" data-theme="theme-magenta" title="Neon Pink"></button>
+            </div>
+          </div>
+          <div class="form-group row-group">
+            <label for="input-always-on-top" class="checkbox-label">
+              <input type="checkbox" id="input-always-on-top" />
+              <span>ALWAYS ON TOP</span>
+            </label>
+          </div>
+          <div class="form-group row-group">
+            <label for="input-autostart" class="checkbox-label">
+              <input type="checkbox" id="input-autostart" />
+              <span>AUTOSTART ON BOOT</span>
+            </label>
+          </div>
+          <button class="cyber-btn" id="btn-save-settings">COMMIT CHANGES</button>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

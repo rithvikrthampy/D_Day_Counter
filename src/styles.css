@@ -1,0 +1,570 @@
+/* Color Palette Variables */
+:root {
+  --font-title: 'Orbitron', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+
+  /* Theme Defaults (Cyan) */
+  --bg-color: rgba(8, 16, 28, 0.72);
+  --bg-solid: #08101c;
+  --primary-color: #00f2fe;
+  --primary-glow: rgba(0, 242, 254, 0.45);
+  --primary-glow-subtle: rgba(0, 242, 254, 0.15);
+  --text-color: #e0f7fc;
+  --text-dim: #709ca8;
+  --border-color: rgba(0, 242, 254, 0.35);
+  --danger-color: #ff3b30;
+}
+
+/* Theme Options */
+.theme-cyan {
+  --primary-color: #00f2fe;
+  --primary-glow: rgba(0, 242, 254, 0.45);
+  --primary-glow-subtle: rgba(0, 242, 254, 0.15);
+  --text-color: #e0f7fc;
+  --text-dim: #709ca8;
+  --border-color: rgba(0, 242, 254, 0.35);
+}
+
+.theme-orange {
+  --primary-color: #ff6c00;
+  --primary-glow: rgba(255, 108, 0, 0.45);
+  --primary-glow-subtle: rgba(255, 108, 0, 0.15);
+  --text-color: #ffebd6;
+  --text-dim: #b89370;
+  --border-color: rgba(255, 108, 0, 0.35);
+}
+
+.theme-green {
+  --primary-color: #39ff14;
+  --primary-glow: rgba(57, 255, 20, 0.45);
+  --primary-glow-subtle: rgba(57, 255, 20, 0.15);
+  --text-color: #d6ffd8;
+  --text-dim: #70b875;
+  --border-color: rgba(57, 255, 20, 0.35);
+}
+
+.theme-magenta {
+  --primary-color: #ff007f;
+  --primary-glow: rgba(255, 0, 127, 0.45);
+  --primary-glow-subtle: rgba(255, 0, 127, 0.15);
+  --text-color: #ffd6eb;
+  --text-dim: #b87093;
+  --border-color: rgba(255, 0, 127, 0.35);
+}
+
+/* Base resets & layouts */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  background: var(--bg-solid) !important;
+  color: var(--text-color);
+  font-family: var(--font-title);
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  color-scheme: dark; /* Force native scrollbars, pickers and calendar dropdowns to render in dark theme */
+}
+
+/* The Widget Container */
+.widget-container {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.6), inset 0 0 15px var(--primary-glow-subtle);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Futuristic Scanline Animation */
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg, 
+    rgba(255, 0, 0, 0.03), 
+    rgba(0, 255, 0, 0.01), 
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.85;
+}
+
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 0%, rgba(255, 255, 255, 0.08) 10%, rgba(18, 16, 16, 0) 10%);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Digital Grid Background */
+.grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Cyber Corners */
+.cyber-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--primary-color);
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px var(--primary-color));
+  transition: border-color 0.3s ease;
+}
+.cyber-corner.top-left {
+  top: 4px;
+  left: 4px;
+  border-right: none;
+  border-bottom: none;
+}
+.cyber-corner.top-right {
+  top: 4px;
+  right: 4px;
+  border-left: none;
+  border-bottom: none;
+}
+.cyber-corner.bottom-left {
+  bottom: 4px;
+  left: 4px;
+  border-right: none;
+  border-top: none;
+}
+.cyber-corner.bottom-right {
+  bottom: 4px;
+  right: 4px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Widget Header */
+.widget-header {
+  height: 36px;
+  border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.sys-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+}
+
+.status-indicator-pulse {
+  width: 6px;
+  height: 6px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary-color);
+  animation: pulse-glow 2s infinite ease-in-out;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.tech-text {
+  text-shadow: 0 0 5px var(--primary-glow-subtle);
+  transition: color 0.3s;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.win-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 2px;
+}
+
+.win-btn:hover {
+  background: var(--primary-glow-subtle);
+  color: var(--primary-color);
+  text-shadow: 0 0 5px var(--primary-color);
+}
+
+.win-btn.close-btn:hover {
+  background: rgba(255, 59, 48, 0.2);
+  color: var(--danger-color);
+  text-shadow: 0 0 5px var(--danger-color);
+}
+
+/* Widget Body */
+.widget-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 16px 14px 16px;
+  z-index: 5;
+}
+
+.event-header {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--primary-color);
+  text-transform: uppercase;
+  text-align: left;
+  border-left: 2px solid var(--primary-color);
+  padding-left: 8px;
+  margin-top: 4px;
+  text-shadow: 0 0 8px var(--primary-glow);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 340px;
+  transition: color 0.3s, border-color 0.3s;
+}
+
+/* Countdown Grid */
+.countdown-grid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 65px;
+}
+
+.time-val {
+  font-family: var(--font-mono);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 0 0 10px var(--primary-glow);
+  color: var(--text-color);
+}
+
+.time-lbl {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.time-separator {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--primary-color);
+  opacity: 0.7;
+  padding-bottom: 12px;
+  animation: separator-blink 1s infinite steps(1);
+  text-shadow: 0 0 8px var(--primary-glow);
+  transition: color 0.3s;
+}
+
+@keyframes separator-blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+/* Tactical Progress Bar */
+.progress-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.progress-pct {
+  font-family: var(--font-mono);
+  color: var(--primary-color);
+  transition: color 0.3s;
+}
+
+.progress-track {
+  height: 5px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  border-radius: 1px;
+  padding: 1px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary-color);
+  box-shadow: 0 0 8px var(--primary-color);
+  transition: width 0.5s ease-out, background 0.3s, box-shadow 0.3s;
+}
+
+/* Settings Overlay Panel */
+.settings-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-solid);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(15px);
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.settings-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 242, 254, 0.15);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+
+.settings-header .tech-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--primary-color);
+}
+
+.close-settings {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-settings:hover {
+  color: var(--danger-color);
+  text-shadow: 0 0 5px var(--danger-color);
+}
+
+.settings-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Custom Scrollbar for Sci-Fi settings list */
+.settings-body::-webkit-scrollbar {
+  width: 4px;
+}
+.settings-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+.settings-body::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.form-group input[type="text"],
+.form-group input[type="datetime-local"] {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  padding: 4px 8px;
+  color: var(--text-color);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px var(--primary-glow-subtle);
+}
+
+/* Theme Selector */
+.theme-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.theme-opt {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.theme-opt.active {
+  border-color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.theme-opt.cyan { background-color: #00f2fe; color: #00f2fe; }
+.theme-opt.orange { background-color: #ff6c00; color: #ff6c00; }
+.theme-opt.green { background-color: #39ff14; color: #39ff14; }
+.theme-opt.magenta { background-color: #ff007f; color: #ff007f; }
+
+/* Always on Top Checkbox */
+.row-group {
+  margin-top: 2px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 8px !important;
+}
+
+.checkbox-label input {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.4);
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-label input:checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 6px var(--primary-glow);
+}
+
+.checkbox-label input:checked::after {
+  content: "✓";
+  position: absolute;
+  top: -2px;
+  left: 2px;
+  color: #000;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+/* Cyber Button */
+.cyber-btn {
+  background: var(--primary-glow-subtle);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 6px;
+  border-radius: 2px;
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: all 0.2s;
+  text-shadow: 0 0 3px var(--primary-color);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.cyber-btn:hover {
+  background: var(--primary-color);
+  color: #08101c;
+  text-shadow: none;
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.cyber-btn:active {
+  transform: scale(0.98);
+}
