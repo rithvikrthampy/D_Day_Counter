@@ -26,7 +26,7 @@ fast, and runs as a native Windows app.
 
 ## Download & install
 
-Grab the latest installer from the [**Releases**](https://github.com/Onliest/D-daycounter/releases/latest) page:
+Grab the latest installer from the [**Releases**](https://github.com/rithvikrthampy/D_Day_Counter/releases/latest) page:
 
 - **`D-daycounter_x64-setup.exe`** — recommended Windows installer (NSIS).
 - **`D-daycounter_x64_en-US.msi`** — alternative Windows Installer package.
