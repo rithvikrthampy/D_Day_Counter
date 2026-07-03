@@ -68,18 +68,6 @@ src-tauri/target/release/bundle/nsis/D-daycounter_<version>_x64-setup.exe
 src-tauri/target/release/bundle/msi/D-daycounter_<version>_x64_en-US.msi
 ```
 
-## Releasing (maintainers)
-
-Releases are built automatically by GitHub Actions. To publish a new version:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The [release workflow](.github/workflows/release.yml) builds the Windows
-installers and attaches them to a new GitHub Release for that tag.
-
 ## Tech stack
 
 - **[Tauri 2](https://tauri.app/)** — native shell & Rust backend
