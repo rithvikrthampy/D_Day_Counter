@@ -43,9 +43,13 @@
 
       <!-- Main Widget Body -->
       <main class="widget-body">
-        <!-- Event Name -->
-        <div class="event-header" id="event-name-display">
-          INITIALIZING...
+        <!-- Event Name & Preset Switcher -->
+        <div class="event-selector-container">
+          <button class="preset-nav-btn" id="btn-prev-preset" title="Previous Preset">◂</button>
+          <div class="event-header" id="event-name-display">
+            INITIALIZING...
+          </div>
+          <button class="preset-nav-btn" id="btn-next-preset" title="Next Preset">▸</button>
         </div>
 
         <!-- Countdown Timer -->
@@ -71,15 +75,12 @@
           </div>
         </div>
 
-        <!-- Cyber Progress Bar -->
-        <div class="progress-bar-container">
-          <div class="progress-info">
-            <span class="progress-lbl">TIME TACTICAL INDEX</span>
-            <span class="progress-pct" id="progress-pct-val">100.0%</span>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progress-fill-bar" style="width: 100%;"></div>
-          </div>
+
+        <!-- Tactical Console Logs -->
+        <div class="tactical-console" id="tactical-console">
+          <div class="console-line">> SYS.STATUS: OK</div>
+          <div class="console-line">> CHRONO.ACTIVE: TRUE</div>
+          <div class="console-line">> HUD.STREAM: ONLINE</div>
         </div>
       </main>
 
@@ -119,7 +120,58 @@
               <span>AUTOSTART ON BOOT</span>
             </label>
           </div>
-          <button class="cyber-btn" id="btn-save-settings">COMMIT CHANGES</button>
+          
+          <div class="form-group row-group">
+            <label for="input-crt" class="checkbox-label">
+              <input type="checkbox" id="input-crt" checked />
+              <span>CRT SCANLINES</span>
+            </label>
+          </div>
+          <div class="form-group row-group">
+            <label for="input-grid" class="checkbox-label">
+              <input type="checkbox" id="input-grid" checked />
+              <span>CYBER GRID PATTERN</span>
+            </label>
+          </div>
+          <div class="form-group row-group">
+            <label for="input-sound" class="checkbox-label">
+              <input type="checkbox" id="input-sound" checked />
+              <span>AUDIO SIGNAL BEACONS</span>
+            </label>
+          </div>
+
+
+          <!-- Presets Management -->
+          <div class="form-group" style="margin-top: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <label>TIMELINE PRESETS</label>
+              <button class="preset-btn" id="btn-add-preset" style="border-color: var(--primary-color); color: var(--primary-color); font-size: 7px; padding: 2px 6px;">+ ADD TIMER</button>
+            </div>
+            <div class="presets-list" id="presets-list">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <button class="cyber-btn" id="btn-save-settings" style="margin-top: 8px;">COMMIT CHANGES</button>
+        </div>
+      </div>
+
+      <!-- Firmware Update Alert Modal -->
+      <div class="update-overlay" id="update-prompt">
+        <div class="update-modal">
+          <div class="update-header">
+            <span class="hazard-blink">⚠</span>
+            <span class="tech-text" style="color: #ff3b30; text-shadow: 0 0 8px #ff3b30;">FIRMWARE UPDATE DETECTED</span>
+            <span class="hazard-blink">⚠</span>
+          </div>
+          <div class="update-body">
+            <p>An update to version <span id="update-version-val" style="color: var(--primary-color);">x.y.z</span> is available.</p>
+            <p class="warning-text" style="font-size: 7px; color: #ff3b30; margin-top: 6px; letter-spacing: 1px;">APPLYING UPDATE WILL REBOOT CHRONO UNIT.</p>
+          </div>
+          <div class="update-controls">
+            <button class="cyber-btn" id="btn-confirm-update" style="border-color: #ff3b30; color: #ff3b30; background: rgba(255, 59, 48, 0.1);">COMMIT UPDATE</button>
+            <button class="cyber-btn cancel-btn" id="btn-cancel-update" style="border-color: var(--text-dim); color: var(--text-dim); background: transparent;">ABORT</button>
+          </div>
         </div>
       </div>
 

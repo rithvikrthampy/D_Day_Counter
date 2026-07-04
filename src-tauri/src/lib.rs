@@ -1,5 +1,18 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
+use tauri::{
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_updater::UpdaterExt;
+use std::sync::Mutex;
+
+struct UpdateState {
+    pending_update: Mutex<Option<tauri_plugin_updater::Update>>,
+}
+
 const RUN_KEY: &str = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const RUN_VALUE: &str = "SciFiChronoWidget";
 
@@ -97,11 +110,124 @@ fn is_autostart_enabled() -> bool {
     }
 }
 
+
+#[tauri::command]
+async fn check_for_updates(app: tauri::AppHandle, state: tauri::State<'_, UpdateState>) -> Result<bool, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        let mut pending = state.pending_update.lock().unwrap();
+        *pending = Some(update);
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+#[tauri::command]
+async fn start_update_install(app: tauri::AppHandle, state: tauri::State<'_, UpdateState>) -> Result<(), String> {
+    let update = {
+        let mut pending = state.pending_update.lock().unwrap();
+        pending.take()
+    };
+    if let Some(update) = update {
+        update.download_and_install(|_received, _total| {}, || {}).await.map_err(|e| e.to_string())?;
+        app.restart();
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![set_autostart, is_autostart_enabled])
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, _shortcut, event| {
+                    if event.state() == ShortcutState::Pressed {
+                        if let Some(window) = app.get_webview_window("main") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    }
+                })
+                .build(),
+        )
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .manage(UpdateState {
+            pending_update: Mutex::new(None),
+        })
+        .invoke_handler(tauri::generate_handler![
+            set_autostart,
+            is_autostart_enabled,
+            check_for_updates,
+            start_update_install
+        ])
+        .setup(|app| {
+            // Register global shortcut
+            let shortcut = Shortcut::new(Some(Modifiers::ALT | Modifiers::SHIFT), Code::KeyC);
+            let _ = app.global_shortcut().register(shortcut);
+
+            // 1. Create Menu items
+            let show_i = MenuItemBuilder::with_id("show", "Show Widget").build(app)?;
+            let hide_i = MenuItemBuilder::with_id("hide", "Hide Widget").build(app)?;
+            let quit_i = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+
+            // 2. Build the menu
+            let menu = MenuBuilder::new(app)
+                .items(&[&show_i, &hide_i, &quit_i])
+                .build()?;
+
+            // 3. Build the tray with the event handlers
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            if window.is_visible().unwrap_or(false) {
+                                let _ = window.hide();
+                            } else {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    }
+                })
+                .on_menu_event(|app, event| {
+                    match event.id().as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "hide" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.hide();
+                            }
+                        }
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .build(app)?;
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

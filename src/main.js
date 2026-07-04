@@ -4,18 +4,97 @@ if (window.__TAURI__ && window.__TAURI__.window) {
   appWindow = window.__TAURI__.window.getCurrentWindow();
 }
 
-// State variables
+// Audio Synthesizer using Web Audio API
+const AudioSynth = {
+  ctx: null,
+  enabled: true,
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  },
+
+  playTick() {
+    if (!this.enabled) return;
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1400, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.015, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.04);
+    } catch (e) {
+      console.warn("Audio Synth fail:", e);
+    }
+  },
+
+  playClick() {
+    if (!this.enabled) return;
+    try {
+      this.init();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(900, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.03);
+    } catch (e) {
+      console.warn("Audio Synth fail:", e);
+    }
+  },
+
+  playAlarm() {
+    if (!this.enabled) return;
+    try {
+      this.init();
+      const now = this.ctx.currentTime;
+      for (let i = 0; i < 4; i++) {
+        const start = now + i * 0.4;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(980, start);
+        gain.gain.setValueAtTime(0.03, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.25);
+      }
+    } catch (e) {
+      console.warn("Audio Synth fail:", e);
+    }
+  }
+};
+
+// Preset state
+let presets = [];
+let currentPresetIndex = -1;
+
+// General State variables
 let eventName = "MISSION SEQUENCE";
 let targetDate = "";
 let creationDate = "";
 let themeClass = "theme-cyan";
 let alwaysOnTop = false;
+let showCrt = true;
+let showGrid = true;
 
 // DOM Elements
 let widgetContainer;
 let eventNameDisplay;
 let daysVal, hoursVal, minutesVal, secondsVal;
-let progressPctVal, progressFillBar;
 let settingsPanel;
 
 // Form Inputs
@@ -24,6 +103,10 @@ let inputTargetDate;
 let themeOpts;
 let inputAlwaysOnTop;
 let inputAutostart;
+let inputCrt;
+let inputGrid;
+let inputSound;
+let presetsList;
 let autostart = false;
 
 // Load state from localStorage or set defaults
@@ -32,16 +115,34 @@ function loadState() {
   themeClass = localStorage.getItem("chrono_theme") || "theme-cyan";
   alwaysOnTop = localStorage.getItem("chrono_always_on_top") === "true";
   
+  showCrt = localStorage.getItem("chrono_crt_enabled") !== "false";
+  showGrid = localStorage.getItem("chrono_grid_enabled") !== "false";
+  AudioSynth.enabled = localStorage.getItem("chrono_sound_enabled") !== "false";
+
+  // Load presets database
+  try {
+    const rawPresets = localStorage.getItem("chrono_presets");
+    presets = rawPresets ? JSON.parse(rawPresets) : [
+      { name: "LAUNCH SEQUENCE", target: new Date(Date.now() + 300000000).toISOString().slice(0, 16) },
+      { name: "TACTICAL EXAM", target: new Date(Date.now() + 150000000).toISOString().slice(0, 16) }
+    ];
+  } catch (e) {
+    presets = [];
+  }
+
   const savedTarget = localStorage.getItem("chrono_target_date");
   const savedCreation = localStorage.getItem("chrono_creation_date");
-  
   const now = new Date();
+  
   if (savedTarget) {
     targetDate = savedTarget;
+  } else if (presets.length > 0) {
+    targetDate = presets[0].target;
+    eventName = presets[0].name;
+    currentPresetIndex = 0;
   } else {
-    // Default to 3 days and 12 hours from now
     const defaultTarget = new Date(now.getTime() + (3 * 24 + 12) * 60 * 60 * 1000);
-    targetDate = defaultTarget.toISOString().slice(0, 16); // format to datetime-local string (YYYY-MM-DDTHH:MM)
+    targetDate = defaultTarget.toISOString().slice(0, 16);
   }
   
   if (savedCreation) {
@@ -49,6 +150,9 @@ function loadState() {
   } else {
     creationDate = now.toISOString();
   }
+
+  // Find index of current preset
+  currentPresetIndex = presets.findIndex(p => p.name === eventName && p.target === targetDate);
 }
 
 // Save state to localStorage
@@ -58,16 +162,22 @@ function saveState() {
   localStorage.setItem("chrono_creation_date", creationDate);
   localStorage.setItem("chrono_theme", themeClass);
   localStorage.setItem("chrono_always_on_top", alwaysOnTop ? "true" : "false");
+  localStorage.setItem("chrono_crt_enabled", showCrt ? "true" : "false");
+  localStorage.setItem("chrono_grid_enabled", showGrid ? "true" : "false");
+  localStorage.setItem("chrono_sound_enabled", AudioSynth.enabled ? "true" : "false");
+  localStorage.setItem("chrono_presets", JSON.stringify(presets));
 }
 
 // Apply visual themes and window options
 function applyConfigurations() {
-  // Apply theme class to widget container
   if (widgetContainer) {
-    widgetContainer.className = `widget-container ${themeClass}`;
+    // Classes for Theme, Grid and Scanline toggles
+    let classes = `widget-container ${themeClass}`;
+    if (!showGrid) classes += " grid-disabled";
+    if (!showCrt) classes += " scanlines-disabled";
+    widgetContainer.className = classes;
   }
   
-  // Apply window always on top configuration
   if (appWindow) {
     appWindow.setAlwaysOnTop(alwaysOnTop).catch(err => {
       console.error("Failed to set always on top:", err);
@@ -75,60 +185,154 @@ function applyConfigurations() {
   }
 }
 
+// Alarm tracking to prevent playing it repeatedly
+let alarmPlayed = false;
+
 // Update the countdown display
 function updateCountdown() {
   const now = new Date().getTime();
   const target = new Date(targetDate).getTime();
-  const start = new Date(creationDate).getTime();
   
   const totalDiff = target - now;
   
   if (totalDiff <= 0) {
-    // Timer expired
     daysVal.textContent = "00";
     hoursVal.textContent = "00";
     minutesVal.textContent = "00";
     secondsVal.textContent = "00";
     
     eventNameDisplay.textContent = `${eventName} // TERMINAL`;
-    progressPctVal.textContent = "0.00%";
-    progressFillBar.style.width = "0%";
     
-    // Add warning styling to the container or text when expired
     eventNameDisplay.style.color = "var(--danger-color)";
     eventNameDisplay.style.borderColor = "var(--danger-color)";
     eventNameDisplay.style.textShadow = "0 0 8px var(--danger-color)";
+
+    // Play terminal alarm once
+    if (!alarmPlayed) {
+      AudioSynth.playAlarm();
+      alarmPlayed = true;
+    }
     return;
   }
   
-  // Reset normal theme colors on event name in case it was previously expired
+  alarmPlayed = false;
   eventNameDisplay.style.color = "";
   eventNameDisplay.style.borderColor = "";
   eventNameDisplay.style.textShadow = "";
   eventNameDisplay.textContent = eventName;
   
-  // Calculations
   const days = Math.floor(totalDiff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((totalDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((totalDiff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((totalDiff % (1000 * 60)) / 1000);
   
-  // Update UI values
   daysVal.textContent = String(days).padStart(2, '0');
   hoursVal.textContent = String(hours).padStart(2, '0');
   minutesVal.textContent = String(minutes).padStart(2, '0');
   secondsVal.textContent = String(seconds).padStart(2, '0');
+
+  // Play subtle ticking sound on seconds transition
+  AudioSynth.playTick();
+}
+
+// Preset management helpers
+function renderPresets() {
+  if (!presetsList) return;
+  presetsList.innerHTML = "";
   
-  // Calculate percentage remaining
-  const totalDuration = target - start;
-  let pct = 0;
-  if (totalDuration > 0) {
-    const elapsed = now - start;
-    pct = Math.max(0, Math.min(100, (1 - (elapsed / totalDuration)) * 100));
+  presets.forEach((preset, idx) => {
+    const div = document.createElement("div");
+    div.className = "preset-item" + (idx === currentPresetIndex ? " active" : "");
+    
+    div.innerHTML = `
+      <span class="preset-name-lbl">${preset.name}</span>
+      <div class="preset-actions">
+        <button class="preset-btn select-btn" data-idx="${idx}">LOAD</button>
+        <button class="preset-btn del-btn" data-idx="${idx}">×</button>
+      </div>
+    `;
+    presetsList.appendChild(div);
+  });
+
+  // Attach button events
+  presetsList.querySelectorAll(".select-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      AudioSynth.playClick();
+      const idx = parseInt(btn.getAttribute("data-idx"));
+      loadPreset(idx);
+    });
+  });
+
+  presetsList.querySelectorAll(".del-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      AudioSynth.playClick();
+      const idx = parseInt(btn.getAttribute("data-idx"));
+      deletePreset(idx);
+    });
+  });
+}
+
+function loadPreset(idx) {
+  if (idx < 0 || idx >= presets.length) return;
+  currentPresetIndex = idx;
+  eventName = presets[idx].name;
+  targetDate = presets[idx].target;
+  creationDate = new Date().toISOString();
+  saveState();
+  updateCountdown();
+  renderPresets();
+  
+  // Update Settings Form Inputs in case settings are currently open
+  if (inputEventName) inputEventName.value = eventName;
+  if (inputTargetDate) inputTargetDate.value = targetDate;
+}
+
+function deletePreset(idx) {
+  presets.splice(idx, 1);
+  if (currentPresetIndex === idx) {
+    currentPresetIndex = presets.length > 0 ? 0 : -1;
+    if (currentPresetIndex !== -1) {
+      eventName = presets[0].name;
+      targetDate = presets[0].target;
+    }
+  } else if (currentPresetIndex > idx) {
+    currentPresetIndex--;
   }
+  saveState();
+  updateCountdown();
+  renderPresets();
+}
+
+// scrolling console logs
+const consoleLines = [
+  "SYS.STATUS: OPERATION LOG ONLINE",
+  "GRID.ENCRYPTION: SHIELD MAXIMUM",
+  "CHRONO.QUANTUM: SYNC COMPLETED",
+  "NEON.REACTOR: STABLE AT 100%",
+  "TEMP.CORE: NORMAL RANGE (32C)",
+  "SIGNAL.TAC: SECURE BEACON COMM",
+  "MEM.SECTOR: SCRUBBING CACHE",
+  "FIRMWARE.INTEGRITY: SECURE",
+  "AUTOSTART.RUNNER: WAITING",
+  "HUD.MATRIX: CHROMATIC BUFF"
+];
+
+function triggerLogConsole() {
+  const consoleEl = document.getElementById("tactical-console");
+  if (!consoleEl) return;
   
-  progressPctVal.textContent = `${pct.toFixed(2)}%`;
-  progressFillBar.style.width = `${pct}%`;
+  // Pick random log
+  const text = consoleLines[Math.floor(Math.random() * consoleLines.length)];
+  const div = document.createElement("div");
+  div.className = "console-line";
+  div.textContent = `> ${text}`;
+  
+  consoleEl.appendChild(div);
+  
+  // Keep max 3 lines
+  while (consoleEl.children.length > 3) {
+    consoleEl.removeChild(consoleEl.firstChild);
+  }
 }
 
 // Initialize on DOM Load
@@ -140,8 +344,6 @@ window.addEventListener("DOMContentLoaded", () => {
   hoursVal = document.getElementById("hours-val");
   minutesVal = document.getElementById("minutes-val");
   secondsVal = document.getElementById("seconds-val");
-  progressPctVal = document.getElementById("progress-pct-val");
-  progressFillBar = document.getElementById("progress-fill-bar");
   settingsPanel = document.getElementById("settings-panel");
   
   inputEventName = document.getElementById("input-event-name");
@@ -149,6 +351,12 @@ window.addEventListener("DOMContentLoaded", () => {
   themeOpts = document.querySelectorAll(".theme-opt");
   inputAlwaysOnTop = document.getElementById("input-always-on-top");
   inputAutostart = document.getElementById("input-autostart");
+  
+  // Custom Customization settings
+  inputCrt = document.getElementById("input-crt");
+  inputGrid = document.getElementById("input-grid");
+  inputSound = document.getElementById("input-sound");
+  presetsList = document.getElementById("presets-list");
 
   // Query current autostart status from Registry on load
   if (window.__TAURI__ && window.__TAURI__.core) {
@@ -168,33 +376,63 @@ window.addEventListener("DOMContentLoaded", () => {
   // Start the countdown update loop (every 1s)
   updateCountdown();
   const timerInterval = setInterval(updateCountdown, 1000);
+
+  // Set up console log transitions
+  setInterval(triggerLogConsole, 6000);
   
+  // Make window visible once loaded and size state plugin is ready to prevent window flashing
+  if (appWindow) {
+    appWindow.show().catch(err => console.error("Failed to show window:", err));
+  }
+
   // Set up event listeners for window actions
   document.getElementById("btn-minimize").addEventListener("click", () => {
+    AudioSynth.playClick();
     if (appWindow) {
       appWindow.minimize();
-    } else {
-      console.log("Mock Minimize");
     }
   });
   
   document.getElementById("btn-close").addEventListener("click", () => {
+    AudioSynth.playClick();
     if (appWindow) {
       appWindow.close();
-    } else {
-      console.log("Mock Close");
     }
   });
   
+  // Preset switcher arrows on the front widget face
+  document.getElementById("btn-prev-preset").addEventListener("click", () => {
+    AudioSynth.playClick();
+    if (presets.length <= 1) return;
+    let newIdx = currentPresetIndex - 1;
+    if (newIdx < 0) newIdx = presets.length - 1;
+    loadPreset(newIdx);
+  });
+
+  document.getElementById("btn-next-preset").addEventListener("click", () => {
+    AudioSynth.playClick();
+    if (presets.length <= 1) return;
+    let newIdx = currentPresetIndex + 1;
+    if (newIdx >= presets.length) newIdx = 0;
+    loadPreset(newIdx);
+  });
+
   // Settings menu buttons
   document.getElementById("btn-settings").addEventListener("click", () => {
+    AudioSynth.playClick();
     // Open settings panel and load state values into form inputs
     inputEventName.value = eventName;
     inputTargetDate.value = targetDate;
     inputAlwaysOnTop.checked = alwaysOnTop;
     if (inputAutostart) inputAutostart.checked = autostart;
     
-    // Set active theme button selection
+    // Custom switches
+    if (inputCrt) inputCrt.checked = showCrt;
+    if (inputGrid) inputGrid.checked = showGrid;
+    if (inputSound) inputSound.checked = AudioSynth.enabled;
+
+    renderPresets();
+
     themeOpts.forEach(opt => {
       if (opt.getAttribute("data-theme") === themeClass) {
         opt.classList.add("active");
@@ -207,10 +445,10 @@ window.addEventListener("DOMContentLoaded", () => {
   });
   
   document.getElementById("btn-close-settings").addEventListener("click", () => {
+    AudioSynth.playClick();
     settingsPanel.classList.remove("open");
   });
 
-  // Automatically trigger calendar & time picker when the input is clicked
   inputTargetDate.addEventListener("click", () => {
     try {
       inputTargetDate.showPicker();
@@ -219,17 +457,31 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
   
-  // Theme selector click handling
   themeOpts.forEach(btn => {
     btn.addEventListener("click", () => {
+      AudioSynth.playClick();
       themeOpts.forEach(o => o.classList.remove("active"));
       btn.classList.add("active");
     });
   });
-  
+
+  // Presets Add Timer Button click
+  const btnAddPreset = document.getElementById("btn-add-preset");
+  if (btnAddPreset) {
+    btnAddPreset.addEventListener("click", () => {
+      AudioSynth.playClick();
+      const defaultTarget = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+      presets.push({ name: "NEW EVENT", target: defaultTarget });
+      currentPresetIndex = presets.length - 1;
+      
+      // Load this preset instantly
+      loadPreset(currentPresetIndex);
+    });
+  }
+
   // Commit settings changes
   document.getElementById("btn-save-settings").addEventListener("click", () => {
-    // Read input values
+    AudioSynth.playClick();
     const newEventName = inputEventName.value.trim() || "SYS.EVENT";
     const newTargetDate = inputTargetDate.value;
     
@@ -243,7 +495,11 @@ window.addEventListener("DOMContentLoaded", () => {
     const newAlwaysOnTop = inputAlwaysOnTop.checked;
     const newAutostart = inputAutostart ? inputAutostart.checked : false;
 
-    // Toggle registry entry if the autostart option was changed
+    // Custom toggles
+    const newCrt = inputCrt ? inputCrt.checked : true;
+    const newGrid = inputGrid ? inputGrid.checked : true;
+    const newSound = inputSound ? inputSound.checked : true;
+
     if (newAutostart !== autostart && window.__TAURI__ && window.__TAURI__.core) {
       const { invoke } = window.__TAURI__.core;
       invoke("set_autostart", { enable: newAutostart })
@@ -256,21 +512,77 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
     
-    // Update State
     eventName = newEventName;
     targetDate = newTargetDate;
-    creationDate = new Date().toISOString(); // Reset start reference on change
+    creationDate = new Date().toISOString();
     themeClass = newTheme;
     alwaysOnTop = newAlwaysOnTop;
+    showCrt = newCrt;
+    showGrid = newGrid;
+    AudioSynth.enabled = newSound;
     
-    // Persist and Apply changes
+    // Save current active event back into the preset list to synchronize it
+    if (currentPresetIndex !== -1 && currentPresetIndex < presets.length) {
+      presets[currentPresetIndex].name = eventName;
+      presets[currentPresetIndex].target = targetDate;
+    }
+
     saveState();
     applyConfigurations();
-    
-    // Refresh countdown UI immediately
     updateCountdown();
     
-    // Hide panel
     settingsPanel.classList.remove("open");
   });
+
+  // ==================== AUTO UPDATER CLIENT ====================
+  if (window.__TAURI__ && window.__TAURI__.core) {
+    const { invoke } = window.__TAURI__.core;
+    
+    // Check for updates shortly after startup
+    setTimeout(() => {
+      invoke("check_for_updates")
+        .then(available => {
+          if (available) {
+            // Found update! Open prompt
+            const prompt = document.getElementById("update-prompt");
+            const verVal = document.getElementById("update-version-val");
+            if (prompt) {
+              if (verVal) verVal.textContent = "NEW VER";
+              prompt.classList.add("open");
+              AudioSynth.playAlarm();
+            }
+          }
+        })
+        .catch(err => console.error("Error checking for updates:", err));
+    }, 4000);
+
+    const btnConfirmUpdate = document.getElementById("btn-confirm-update");
+    const btnCancelUpdate = document.getElementById("btn-cancel-update");
+    
+    if (btnConfirmUpdate) {
+      btnConfirmUpdate.addEventListener("click", () => {
+        AudioSynth.playClick();
+        btnConfirmUpdate.textContent = "DOWNLOADING...";
+        btnConfirmUpdate.disabled = true;
+        if (btnCancelUpdate) btnCancelUpdate.disabled = true;
+
+        invoke("start_update_install")
+          .catch(err => {
+            console.error("Update install failed:", err);
+            alert("FIRMWARE DOWNLOAD FAILED.");
+            btnConfirmUpdate.textContent = "COMMIT UPDATE";
+            btnConfirmUpdate.disabled = false;
+            if (btnCancelUpdate) btnCancelUpdate.disabled = false;
+          });
+      });
+    }
+
+    if (btnCancelUpdate) {
+      btnCancelUpdate.addEventListener("click", () => {
+        AudioSynth.playClick();
+        const prompt = document.getElementById("update-prompt");
+        if (prompt) prompt.classList.remove("open");
+      });
+    }
+  }
 });
