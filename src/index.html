@@ -152,6 +152,16 @@
             </div>
           </div>
 
+          <!-- Dynamic update banner inside settings -->
+          <div class="update-banner" id="update-banner" style="display: none;">
+            <span class="hazard-blink">⚠</span>
+            <span class="banner-text" style="font-size: 8px; color: #ff3b30; text-shadow: 0 0 4px rgba(255, 59, 48, 0.4); margin: 0 4px;">NEW UPDATE READY: <span id="update-banner-ver">v0.0.0</span></span>
+            <button class="cyber-btn" id="btn-banner-update" style="font-size: 7px; padding: 2px 6px; border-color: #ff3b30; color: #ff3b30; background: rgba(255, 59, 48, 0.08); cursor: pointer; margin-left: auto;">INSTALL</button>
+          </div>
+
+          <button class="cyber-btn" id="btn-check-updates-manual" style="background: rgba(0, 242, 254, 0.03); margin-top: 8px; font-size: 8px; letter-spacing: 1px;">CHECK FOR UPDATES</button>
+          <span id="manual-check-status" style="font-size: 7px; color: var(--text-dim); margin-top: 2px; display: block; text-align: center; font-family: var(--font-mono);"></span>
+
           <button class="cyber-btn" id="btn-save-settings" style="margin-top: 8px;">COMMIT CHANGES</button>
         </div>
       </div>

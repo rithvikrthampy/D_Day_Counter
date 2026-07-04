@@ -772,3 +772,38 @@ html, body {
   50% { opacity: 1; }
 }
 
+/* Update Banner inside Settings */
+.update-banner {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 59, 48, 0.05);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  padding: 6px;
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+/* Settings button notification dot indicator */
+#btn-settings {
+  position: relative;
+}
+
+#btn-settings.has-update::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 5px;
+  height: 5px;
+  background-color: #ff3b30;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ff3b30;
+  animation: indicator-blink 1s infinite alternate;
+}
+
+@keyframes indicator-blink {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+

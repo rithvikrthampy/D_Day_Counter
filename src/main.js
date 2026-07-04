@@ -538,23 +538,110 @@ window.addEventListener("DOMContentLoaded", () => {
   if (window.__TAURI__ && window.__TAURI__.core) {
     const { invoke } = window.__TAURI__.core;
     
-    // Check for updates shortly after startup
-    setTimeout(() => {
+    // Function to run update check
+    function checkUpdates(isManual = false) {
+      const statusEl = document.getElementById("manual-check-status");
+      const btnManual = document.getElementById("btn-check-updates-manual");
+      
+      if (isManual) {
+        if (statusEl) statusEl.textContent = "QUERYING SERVERS...";
+        if (btnManual) {
+          btnManual.disabled = true;
+          btnManual.textContent = "CHECKING...";
+        }
+      }
+      
       invoke("check_for_updates")
         .then(available => {
           if (available) {
-            // Found update! Open prompt
-            const prompt = document.getElementById("update-prompt");
-            const verVal = document.getElementById("update-version-val");
-            if (prompt) {
-              if (verVal) verVal.textContent = "NEW VER";
-              prompt.classList.add("open");
-              AudioSynth.playAlarm();
+            // Show update indicator on settings gear button
+            const gearBtn = document.getElementById("btn-settings");
+            if (gearBtn) gearBtn.classList.add("has-update");
+            
+            // Show update banner inside settings panel
+            const banner = document.getElementById("update-banner");
+            const bannerVer = document.getElementById("update-banner-ver");
+            if (banner) banner.style.display = "flex";
+            if (bannerVer) bannerVer.textContent = "AVAILABLE";
+
+            // Push a warning log line to the console
+            const consoleEl = document.getElementById("tactical-console");
+            if (consoleEl) {
+              const div = document.createElement("div");
+              div.className = "console-line";
+              div.textContent = "> [WARN] NEW FIRMWARE DETECTED.";
+              consoleEl.appendChild(div);
+              while (consoleEl.children.length > 3) {
+                consoleEl.removeChild(consoleEl.firstChild);
+              }
+            }
+
+            // Play alert sound
+            AudioSynth.playAlarm();
+
+            // If manual, open the confirmation modal directly
+            if (isManual) {
+              const prompt = document.getElementById("update-prompt");
+              const verVal = document.getElementById("update-version-val");
+              if (prompt) {
+                if (verVal) verVal.textContent = "NEW VERSION";
+                prompt.classList.add("open");
+              }
+            }
+          } else {
+            if (isManual && statusEl) {
+              statusEl.textContent = "FIRMWARE IS UP TO DATE.";
+              setTimeout(() => { statusEl.textContent = ""; }, 3000);
             }
           }
         })
-        .catch(err => console.error("Error checking for updates:", err));
+        .catch(err => {
+          console.error("Error checking for updates:", err);
+          if (isManual && statusEl) {
+            statusEl.textContent = "CONNECTION DRIFT / ERROR.";
+            setTimeout(() => { statusEl.textContent = ""; }, 3000);
+          }
+        })
+        .finally(() => {
+          if (isManual && btnManual) {
+            btnManual.disabled = false;
+            btnManual.textContent = "CHECK FOR UPDATES";
+          }
+        });
+    }
+
+    // Check for updates automatically shortly after startup
+    setTimeout(() => {
+      checkUpdates(false);
     }, 4000);
+
+    // Check periodically every 24 hours while open
+    setInterval(() => {
+      checkUpdates(false);
+    }, 86400000);
+
+    // Hook manual check button
+    const btnManualCheck = document.getElementById("btn-check-updates-manual");
+    if (btnManualCheck) {
+      btnManualCheck.addEventListener("click", () => {
+        AudioSynth.playClick();
+        checkUpdates(true);
+      });
+    }
+
+    // Hook banner install button to open the modal
+    const btnBannerInstall = document.getElementById("btn-banner-update");
+    if (btnBannerInstall) {
+      btnBannerInstall.addEventListener("click", () => {
+        AudioSynth.playClick();
+        const prompt = document.getElementById("update-prompt");
+        const verVal = document.getElementById("update-version-val");
+        if (prompt) {
+          if (verVal) verVal.textContent = "NEW VERSION";
+          prompt.classList.add("open");
+        }
+      });
+    }
 
     const btnConfirmUpdate = document.getElementById("btn-confirm-update");
     const btnCancelUpdate = document.getElementById("btn-cancel-update");
