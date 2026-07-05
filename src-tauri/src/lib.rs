@@ -158,6 +158,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .manage(UpdateState {
             pending_update: Mutex::new(None),
         })

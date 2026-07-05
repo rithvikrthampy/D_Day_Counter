@@ -7,7 +7,7 @@ if (window.__TAURI__ && window.__TAURI__.window) {
 // Audio Synthesizer using Web Audio API
 const AudioSynth = {
   ctx: null,
-  enabled: true,
+  enabled: false,
 
   init() {
     if (!this.ctx) {
@@ -90,6 +90,9 @@ let themeClass = "theme-cyan";
 let alwaysOnTop = false;
 let showCrt = true;
 let showGrid = true;
+let widgetOpacity = 100;
+let lastSec = -1;
+let notificationSent = false;
 
 // DOM Elements
 let widgetContainer;
@@ -107,17 +110,26 @@ let inputCrt;
 let inputGrid;
 let inputSound;
 let presetsList;
+let inputOpacity;
+let opacityValDisplay;
 let autostart = false;
 
 // Load state from localStorage or set defaults
 function loadState() {
+  const isInitialized = localStorage.getItem("chrono_initialized_v2") === "true";
+  if (!isInitialized) {
+    localStorage.setItem("chrono_sound_enabled", "false");
+    localStorage.setItem("chrono_initialized_v2", "true");
+  }
+
   eventName = localStorage.getItem("chrono_event_name") || "LAUNCH SEQUENCE";
   themeClass = localStorage.getItem("chrono_theme") || "theme-cyan";
   alwaysOnTop = localStorage.getItem("chrono_always_on_top") === "true";
   
   showCrt = localStorage.getItem("chrono_crt_enabled") !== "false";
   showGrid = localStorage.getItem("chrono_grid_enabled") !== "false";
-  AudioSynth.enabled = localStorage.getItem("chrono_sound_enabled") !== "false";
+  AudioSynth.enabled = localStorage.getItem("chrono_sound_enabled") === "true";
+  widgetOpacity = parseInt(localStorage.getItem("chrono_opacity") || "100", 10);
 
   // Load presets database
   try {
@@ -165,6 +177,7 @@ function saveState() {
   localStorage.setItem("chrono_crt_enabled", showCrt ? "true" : "false");
   localStorage.setItem("chrono_grid_enabled", showGrid ? "true" : "false");
   localStorage.setItem("chrono_sound_enabled", AudioSynth.enabled ? "true" : "false");
+  localStorage.setItem("chrono_opacity", widgetOpacity);
   localStorage.setItem("chrono_presets", JSON.stringify(presets));
 }
 
@@ -176,6 +189,7 @@ function applyConfigurations() {
     if (!showGrid) classes += " grid-disabled";
     if (!showCrt) classes += " scanlines-disabled";
     widgetContainer.className = classes;
+    widgetContainer.style.opacity = widgetOpacity / 100;
   }
   
   if (appWindow) {
@@ -195,17 +209,49 @@ function updateCountdown() {
   
   const totalDiff = target - now;
   
+  // Progress Bar elements
+  const progressBar = document.getElementById("progress-fill-bar");
+  const progressPctVal = document.getElementById("progress-pct-val");
+  
+  // Track seconds for ticking
+  const currentSec = Math.floor(now / 1000);
+  let secondsTicked = false;
+  if (currentSec !== lastSec) {
+    lastSec = currentSec;
+    secondsTicked = true;
+  }
+  
   if (totalDiff <= 0) {
-    daysVal.textContent = "00";
-    hoursVal.textContent = "00";
-    minutesVal.textContent = "00";
-    secondsVal.textContent = "00";
+    // Post-D-day Elapsed mode (Count up)
+    const elapsed = Math.abs(totalDiff);
+    const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((elapsed % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+
+    daysVal.textContent = "+" + String(days).padStart(2, '0');
+    hoursVal.textContent = String(hours).padStart(2, '0');
+    minutesVal.textContent = String(minutes).padStart(2, '0');
+    secondsVal.textContent = String(seconds).padStart(2, '0');
     
-    eventNameDisplay.textContent = `${eventName} // TERMINAL`;
+    eventNameDisplay.textContent = `${eventName} // OVERDUE`;
     
     eventNameDisplay.style.color = "var(--danger-color)";
     eventNameDisplay.style.borderColor = "var(--danger-color)";
     eventNameDisplay.style.textShadow = "0 0 8px var(--danger-color)";
+
+    // Progress is 0 when overdue
+    if (progressBar) progressBar.style.width = "0%";
+    if (progressPctVal) progressPctVal.textContent = "0.0%";
+
+    // Send OS Notification
+    if (window.__TAURI__ && window.__TAURI__.notification && !notificationSent) {
+      window.__TAURI__.notification.sendNotification({
+        title: "CHRONO TARGET REACHED",
+        body: `The countdown for "${eventName}" has completed!`
+      }).catch(err => console.error("Notification trigger fail:", err));
+      notificationSent = true;
+    }
 
     // Play terminal alarm once
     if (!alarmPlayed) {
@@ -231,8 +277,24 @@ function updateCountdown() {
   minutesVal.textContent = String(minutes).padStart(2, '0');
   secondsVal.textContent = String(seconds).padStart(2, '0');
 
+  // Compute progress percentage
+  const creationTime = new Date(creationDate).getTime();
+  const targetTime = target;
+  const totalDuration = targetTime - creationTime;
+  const timePassed = now - creationTime;
+  let percentage = 100;
+  if (totalDuration > 0 && timePassed >= 0) {
+    percentage = 100 - (timePassed / totalDuration) * 100;
+    if (percentage < 0) percentage = 0;
+    if (percentage > 100) percentage = 100;
+  }
+  if (progressBar) progressBar.style.width = percentage.toFixed(1) + "%";
+  if (progressPctVal) progressPctVal.textContent = percentage.toFixed(1) + "%";
+
   // Play subtle ticking sound on seconds transition
-  AudioSynth.playTick();
+  if (secondsTicked) {
+    AudioSynth.playTick();
+  }
 }
 
 // Preset management helpers
@@ -278,6 +340,7 @@ function loadPreset(idx) {
   eventName = presets[idx].name;
   targetDate = presets[idx].target;
   creationDate = new Date().toISOString();
+  notificationSent = false;
   saveState();
   updateCountdown();
   renderPresets();
@@ -357,6 +420,25 @@ window.addEventListener("DOMContentLoaded", () => {
   inputGrid = document.getElementById("input-grid");
   inputSound = document.getElementById("input-sound");
   presetsList = document.getElementById("presets-list");
+  inputOpacity = document.getElementById("input-opacity");
+  opacityValDisplay = document.getElementById("opacity-val-display");
+
+  if (inputOpacity) {
+    inputOpacity.addEventListener("input", () => {
+      const val = inputOpacity.value;
+      if (opacityValDisplay) opacityValDisplay.textContent = val + "%";
+      if (widgetContainer) widgetContainer.style.opacity = val / 100;
+    });
+  }
+
+  // Request system notification permissions on load
+  if (window.__TAURI__ && window.__TAURI__.notification) {
+    window.__TAURI__.notification.isPermissionGranted().then(granted => {
+      if (!granted) {
+        window.__TAURI__.notification.requestPermission();
+      }
+    });
+  }
 
   // Query current autostart status from Registry on load
   if (window.__TAURI__ && window.__TAURI__.core) {
@@ -373,9 +455,13 @@ window.addEventListener("DOMContentLoaded", () => {
   loadState();
   applyConfigurations();
   
-  // Start the countdown update loop (every 1s)
+  // Start the countdown update loop via requestAnimationFrame
   updateCountdown();
-  const timerInterval = setInterval(updateCountdown, 1000);
+  function tick() {
+    updateCountdown();
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 
   // Set up console log transitions
   setInterval(triggerLogConsole, 6000);
@@ -430,6 +516,10 @@ window.addEventListener("DOMContentLoaded", () => {
     if (inputCrt) inputCrt.checked = showCrt;
     if (inputGrid) inputGrid.checked = showGrid;
     if (inputSound) inputSound.checked = AudioSynth.enabled;
+    if (inputOpacity) {
+      inputOpacity.value = widgetOpacity;
+      if (opacityValDisplay) opacityValDisplay.textContent = widgetOpacity + "%";
+    }
 
     renderPresets();
 
@@ -499,6 +589,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const newCrt = inputCrt ? inputCrt.checked : true;
     const newGrid = inputGrid ? inputGrid.checked : true;
     const newSound = inputSound ? inputSound.checked : true;
+    const newOpacity = inputOpacity ? parseInt(inputOpacity.value, 10) : 100;
 
     if (newAutostart !== autostart && window.__TAURI__ && window.__TAURI__.core) {
       const { invoke } = window.__TAURI__.core;
@@ -520,6 +611,8 @@ window.addEventListener("DOMContentLoaded", () => {
     showCrt = newCrt;
     showGrid = newGrid;
     AudioSynth.enabled = newSound;
+    widgetOpacity = newOpacity;
+    notificationSent = false;
     
     // Save current active event back into the preset list to synchronize it
     if (currentPresetIndex !== -1 && currentPresetIndex < presets.length) {

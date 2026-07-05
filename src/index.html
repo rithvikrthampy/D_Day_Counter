@@ -75,6 +75,16 @@
           </div>
         </div>
 
+        <!-- Cyber Progress Bar -->
+        <div class="progress-bar-container" id="progress-bar-container">
+          <div class="progress-info">
+            <span class="progress-lbl">TIME TACTICAL INDEX</span>
+            <span class="progress-pct" id="progress-pct-val">100.0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill-bar" style="width: 100%;"></div>
+          </div>
+        </div>
 
         <!-- Tactical Console Logs -->
         <div class="tactical-console" id="tactical-console">
@@ -135,9 +145,17 @@
           </div>
           <div class="form-group row-group">
             <label for="input-sound" class="checkbox-label">
-              <input type="checkbox" id="input-sound" checked />
+              <input type="checkbox" id="input-sound" />
               <span>AUDIO SIGNAL BEACONS</span>
             </label>
+          </div>
+
+          <div class="form-group" style="margin-top: 4px;">
+            <label for="input-opacity">HUD OPACITY</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="range" id="input-opacity" min="20" max="100" value="100" style="flex: 1; accent-color: var(--primary-color);" />
+              <span id="opacity-val-display" style="font-family: var(--font-mono); font-size: 8px; width: 24px; text-align: right; color: var(--primary-color);">100%</span>
+            </div>
           </div>
 
 

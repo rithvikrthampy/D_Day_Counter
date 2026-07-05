@@ -595,6 +595,73 @@ html, body {
   text-shadow: 0 0 8px var(--primary-color);
 }
 
+/* Progress Bar / Time Tactical Index */
+.progress-bar-container {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.progress-pct {
+  color: var(--primary-color);
+  font-weight: bold;
+  text-shadow: 0 0 4px var(--primary-glow);
+}
+
+.progress-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 242, 254, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--text-color));
+  box-shadow: 0 0 8px var(--primary-glow);
+  width: 100%;
+  transition: width 0.3s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+/* Range Input styling */
+input[type="range"] {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px;
+  height: 12px;
+  background: var(--primary-color);
+  border-radius: 1px;
+  box-shadow: 0 0 6px var(--primary-glow);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
 /* Tactical Console Logs */
 .tactical-console {
   background: rgba(0, 0, 0, 0.4);
