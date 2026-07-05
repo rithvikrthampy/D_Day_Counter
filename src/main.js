@@ -631,6 +631,8 @@ window.addEventListener("DOMContentLoaded", () => {
   if (window.__TAURI__ && window.__TAURI__.core) {
     const { invoke } = window.__TAURI__.core;
     
+    let detectedUpdateVersion = null;
+
     // Function to run update check
     function checkUpdates(isManual = false) {
       const statusEl = document.getElementById("manual-check-status");
@@ -645,8 +647,10 @@ window.addEventListener("DOMContentLoaded", () => {
       }
       
       invoke("check_for_updates")
-        .then(available => {
-          if (available) {
+        .then(newVersion => {
+          if (newVersion) {
+            detectedUpdateVersion = newVersion;
+            
             // Show update indicator on settings gear button
             const gearBtn = document.getElementById("btn-settings");
             if (gearBtn) gearBtn.classList.add("has-update");
@@ -655,14 +659,14 @@ window.addEventListener("DOMContentLoaded", () => {
             const banner = document.getElementById("update-banner");
             const bannerVer = document.getElementById("update-banner-ver");
             if (banner) banner.style.display = "flex";
-            if (bannerVer) bannerVer.textContent = "AVAILABLE";
+            if (bannerVer) bannerVer.textContent = "v" + newVersion;
 
             // Push a warning log line to the console
             const consoleEl = document.getElementById("tactical-console");
             if (consoleEl) {
               const div = document.createElement("div");
               div.className = "console-line";
-              div.textContent = "> [WARN] NEW FIRMWARE DETECTED.";
+              div.textContent = `> [WARN] NEW FIRMWARE v${newVersion} DETECTED.`;
               consoleEl.appendChild(div);
               while (consoleEl.children.length > 3) {
                 consoleEl.removeChild(consoleEl.firstChild);
@@ -672,14 +676,14 @@ window.addEventListener("DOMContentLoaded", () => {
             // Play alert sound
             AudioSynth.playAlarm();
 
+            // Set the version string in the update modal
+            const verVal = document.getElementById("update-version-val");
+            if (verVal) verVal.textContent = "v" + newVersion;
+
             // If manual, open the confirmation modal directly
             if (isManual) {
               const prompt = document.getElementById("update-prompt");
-              const verVal = document.getElementById("update-version-val");
-              if (prompt) {
-                if (verVal) verVal.textContent = "NEW VERSION";
-                prompt.classList.add("open");
-              }
+              if (prompt) prompt.classList.add("open");
             }
           } else {
             if (isManual && statusEl) {
@@ -730,7 +734,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const prompt = document.getElementById("update-prompt");
         const verVal = document.getElementById("update-version-val");
         if (prompt) {
-          if (verVal) verVal.textContent = "NEW VERSION";
+          if (verVal) verVal.textContent = detectedUpdateVersion ? "v" + detectedUpdateVersion : "NEW VERSION";
           prompt.classList.add("open");
         }
       });

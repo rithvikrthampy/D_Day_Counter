@@ -112,14 +112,15 @@ fn is_autostart_enabled() -> bool {
 
 
 #[tauri::command]
-async fn check_for_updates(app: tauri::AppHandle, state: tauri::State<'_, UpdateState>) -> Result<bool, String> {
+async fn check_for_updates(app: tauri::AppHandle, state: tauri::State<'_, UpdateState>) -> Result<Option<String>, String> {
     let updater = app.updater().map_err(|e| e.to_string())?;
     if let Some(update) = updater.check().await.map_err(|e| e.to_string())? {
+        let version = update.version.clone();
         let mut pending = state.pending_update.lock().unwrap();
         *pending = Some(update);
-        Ok(true)
+        Ok(Some(version))
     } else {
-        Ok(false)
+        Ok(None)
     }
 }
 
