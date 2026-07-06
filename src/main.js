@@ -475,14 +475,14 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-minimize").addEventListener("click", () => {
     AudioSynth.playClick();
     if (appWindow) {
-      appWindow.minimize();
+      appWindow.hide();
     }
   });
   
   document.getElementById("btn-close").addEventListener("click", () => {
     AudioSynth.playClick();
     if (appWindow) {
-      appWindow.close();
+      appWindow.hide();
     }
   });
   

@@ -160,6 +160,13 @@ pub fn run() {
         )
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }))
         .manage(UpdateState {
             pending_update: Mutex::new(None),
         })
@@ -198,7 +205,13 @@ pub fn run() {
                     {
                         let app = tray.app_handle();
                         if let Some(window) = app.get_webview_window("main") {
-                            if window.is_visible().unwrap_or(false) {
+                            let is_minimized = window.is_minimized().unwrap_or(false);
+                            let is_visible = window.is_visible().unwrap_or(false);
+                            if is_minimized {
+                                let _ = window.unminimize();
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            } else if is_visible {
                                 let _ = window.hide();
                             } else {
                                 let _ = window.show();
