@@ -3,202 +3,197 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sci-Fi Chrono Widget</title>
-    <!-- Google Fonts for futuristic look -->
+    <title>D-Day Counter</title>
+    <!-- Modern Clean Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="/main.js" defer></script>
   </head>
 
   <body>
-    <!-- The main widget panel -->
+    <!-- Main Widget Container -->
     <div class="widget-container theme-cyan" id="widget-container">
       
-      <!-- Tech Scanline Overlay -->
-      <div class="scanlines"></div>
-      
-      <!-- Tech Grid Pattern -->
-      <div class="grid-overlay"></div>
+      <!-- Top goal progress track (1px / 2px thin line across top of widget) -->
+      <div class="progress-bar-container" id="progress-bar-container">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill-bar" style="width: 0%;"></div>
+        </div>
+      </div>
 
-      <!-- Cyber Corners -->
-      <div class="cyber-corner top-left"></div>
-      <div class="cyber-corner top-right"></div>
-      <div class="cyber-corner bottom-left"></div>
-      <div class="cyber-corner bottom-right"></div>
-
-      <!-- Widget Header (Draggable) -->
+      <!-- Header -->
       <header class="widget-header" data-tauri-drag-region>
         <div class="sys-title" data-tauri-drag-region>
-          <span class="status-indicator-pulse"></span>
-          <span class="tech-text" data-tauri-drag-region>D-Day Counter</span>
+          <span class="status-indicator"></span>
+          <span class="header-title" data-tauri-drag-region>D-Day Counter</span>
         </div>
         <div class="window-controls">
-          <button class="win-btn" id="btn-settings" title="Settings">⚙</button>
-          <button class="win-btn" id="btn-minimize" title="Minimize">—</button>
-          <button class="win-btn close-btn" id="btn-close" title="Close">×</button>
+          <button class="win-btn" id="btn-settings" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.1a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="win-btn" id="btn-minimize" title="Minimize">
+            <svg width="10" height="2" viewBox="0 0 10 2" fill="currentColor"><rect width="10" height="2" rx="1"/></svg>
+          </button>
+          <button class="win-btn close-btn" id="btn-close" title="Close">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l8 8M9 1L1 9"/></svg>
+          </button>
         </div>
       </header>
 
-      <!-- Main Widget Body -->
+      <!-- Main Body -->
       <main class="widget-body">
+        
         <!-- Event Name & Preset Switcher -->
         <div class="event-selector-container">
-          <button class="preset-nav-btn" id="btn-prev-preset" title="Previous Preset">◂</button>
+          <button class="preset-nav-btn" id="btn-prev-preset" title="Previous Preset">
+            <svg width="6" height="10" viewBox="0 0 6 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9L1 5l4-4"/></svg>
+          </button>
           <div class="event-header" id="event-name-display">
             INITIALIZING...
           </div>
-          <button class="preset-nav-btn" id="btn-next-preset" title="Next Preset">▸</button>
+          <button class="preset-nav-btn" id="btn-next-preset" title="Next Preset">
+            <svg width="6" height="10" viewBox="0 0 6 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9l4-4-4-4"/></svg>
+          </button>
         </div>
 
-        <!-- Countdown Timer -->
+        <!-- Countdown Grid -->
         <div class="countdown-grid">
           <div class="time-block">
             <span class="time-val" id="days-val">00</span>
-            <span class="time-lbl">DAYS</span>
+            <span class="time-lbl">days</span>
           </div>
           <div class="time-separator">:</div>
           <div class="time-block">
             <span class="time-val" id="hours-val">00</span>
-            <span class="time-lbl">HRS</span>
+            <span class="time-lbl">hrs</span>
           </div>
           <div class="time-separator">:</div>
           <div class="time-block">
             <span class="time-val" id="minutes-val">00</span>
-            <span class="time-lbl">MINS</span>
+            <span class="time-lbl">mins</span>
           </div>
           <div class="time-separator">:</div>
           <div class="time-block">
             <span class="time-val" id="seconds-val">00</span>
-            <span class="time-lbl">SECS</span>
+            <span class="time-lbl">secs</span>
           </div>
         </div>
 
-        <!-- Cyber Progress Bar -->
-        <div class="progress-bar-container" id="progress-bar-container">
-          <div class="progress-info">
-            <span class="progress-lbl">TIME TACTICAL INDEX</span>
-            <span class="progress-pct" id="progress-pct-val">100.0%</span>
+        <!-- Bottom section featuring stats & console -->
+        <div class="bottom-hud-section">
+          <div class="metrics-row">
+            <div class="metric-item">
+              <span class="metric-lbl">Tactical Index</span>
+              <span class="metric-val" id="progress-pct-val">100.0%</span>
+            </div>
           </div>
-          <div class="progress-track">
-            <div class="progress-fill" id="progress-fill-bar" style="width: 100%;"></div>
+          
+          <!-- Tactical Console Logs -->
+          <div class="tactical-console" id="tactical-console">
+            <div class="console-line">> SYS.STATUS: OK</div>
+            <div class="console-line">> CHRONO.ACTIVE: TRUE</div>
+            <div class="console-line">> HUD.STREAM: ONLINE</div>
           </div>
         </div>
 
-        <!-- Tactical Console Logs -->
-        <div class="tactical-console" id="tactical-console">
-          <div class="console-line">> SYS.STATUS: OK</div>
-          <div class="console-line">> CHRONO.ACTIVE: TRUE</div>
-          <div class="console-line">> HUD.STREAM: ONLINE</div>
-        </div>
       </main>
 
-      <!-- Settings Overlay Panel -->
+      <!-- Settings Panel -->
       <div class="settings-overlay" id="settings-panel">
         <div class="settings-header" data-tauri-drag-region>
-          <span class="tech-text" data-tauri-drag-region>CONFIG.SYS // PANEL</span>
-          <button class="close-settings" id="btn-close-settings">×</button>
+          <span class="settings-title" data-tauri-drag-region>Settings</span>
+          <button class="close-settings" id="btn-close-settings">
+            <svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l8 8M9 1L1 9"/></svg>
+          </button>
         </div>
         <div class="settings-body">
           <div class="form-group">
-            <label for="input-event-name">EVENT IDENTIFIER</label>
+            <label for="input-event-name">Event Identifier</label>
             <input type="text" id="input-event-name" placeholder="E.g., SYSTEM ONLINE" maxlength="32" />
           </div>
           <div class="form-group">
-            <label for="input-target-date">TARGET TIMESTAMP</label>
+            <label for="input-target-date">Target Timestamp</label>
             <input type="datetime-local" id="input-target-date" />
           </div>
+
           <div class="form-group">
-            <label>NEON ENERGY THEME</label>
+            <label>Theme</label>
             <div class="theme-picker">
-              <button class="theme-opt cyan active" data-theme="theme-cyan" title="Cyber Cyan"></button>
-              <button class="theme-opt orange" data-theme="theme-orange" title="Solar Orange"></button>
-              <button class="theme-opt green" data-theme="theme-green" title="Bio Green"></button>
-              <button class="theme-opt magenta" data-theme="theme-magenta" title="Neon Pink"></button>
+              <button class="theme-opt cyan active" data-theme="theme-cyan" title="Cyan"></button>
+              <button class="theme-opt orange" data-theme="theme-orange" title="Amber"></button>
+              <button class="theme-opt green" data-theme="theme-green" title="Mint"></button>
+              <button class="theme-opt magenta" data-theme="theme-magenta" title="Orchid"></button>
             </div>
           </div>
-          <div class="form-group row-group">
+
+          <div class="form-group">
+            <label for="input-opacity">HUD Opacity</label>
+            <div class="slider-wrapper">
+              <input type="range" id="input-opacity" min="20" max="100" value="100" />
+              <span id="opacity-val-display">100%</span>
+            </div>
+          </div>
+
+          <div class="toggle-group">
             <label for="input-always-on-top" class="checkbox-label">
               <input type="checkbox" id="input-always-on-top" />
-              <span>ALWAYS ON TOP</span>
+              <span>Always on Top</span>
             </label>
           </div>
-          <div class="form-group row-group">
+
+          <div class="toggle-group">
             <label for="input-autostart" class="checkbox-label">
               <input type="checkbox" id="input-autostart" />
-              <span>AUTOSTART ON BOOT</span>
+              <span>Launch on startup</span>
             </label>
           </div>
           
-          <div class="form-group row-group">
-            <label for="input-crt" class="checkbox-label">
-              <input type="checkbox" id="input-crt" checked />
-              <span>CRT SCANLINES</span>
-            </label>
+          <!-- Hidden inputs to prevent JS crashes on removed CRT/Grid/Sound elements -->
+          <div style="display: none;">
+            <input type="checkbox" id="input-crt" />
+            <input type="checkbox" id="input-grid" />
+            <input type="checkbox" id="input-sound" />
           </div>
-          <div class="form-group row-group">
-            <label for="input-grid" class="checkbox-label">
-              <input type="checkbox" id="input-grid" checked />
-              <span>CYBER GRID PATTERN</span>
-            </label>
-          </div>
-          <div class="form-group row-group">
-            <label for="input-sound" class="checkbox-label">
-              <input type="checkbox" id="input-sound" />
-              <span>AUDIO SIGNAL BEACONS</span>
-            </label>
-          </div>
-
-          <div class="form-group" style="margin-top: 4px;">
-            <label for="input-opacity">HUD OPACITY</label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <input type="range" id="input-opacity" min="20" max="100" value="100" style="flex: 1; accent-color: var(--primary-color);" />
-              <span id="opacity-val-display" style="font-family: var(--font-mono); font-size: 8px; width: 24px; text-align: right; color: var(--primary-color);">100%</span>
-            </div>
-          </div>
-
 
           <!-- Presets Management -->
           <div class="form-group" style="margin-top: 4px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-              <label>TIMELINE PRESETS</label>
-              <button class="preset-btn" id="btn-add-preset" style="border-color: var(--primary-color); color: var(--primary-color); font-size: 7px; padding: 2px 6px;">+ ADD TIMER</button>
+              <label>Timeline Presets</label>
+              <button class="preset-btn" id="btn-add-preset" style="border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); color: var(--text-color); font-size: 8px; font-weight: 600; padding: 2px 6px; border-radius: 4px; cursor: pointer;">+ Add Timer</button>
             </div>
             <div class="presets-list" id="presets-list">
               <!-- Populated dynamically via JS -->
             </div>
           </div>
 
-          <!-- Dynamic update banner inside settings -->
-          <div class="update-banner" id="update-banner" style="display: none;">
-            <span class="hazard-blink">⚠</span>
-            <span class="banner-text" style="font-size: 8px; color: #ff3b30; text-shadow: 0 0 4px rgba(255, 59, 48, 0.4); margin: 0 4px;">NEW UPDATE READY: <span id="update-banner-ver">v0.0.0</span></span>
-            <button class="cyber-btn" id="btn-banner-update" style="font-size: 7px; padding: 2px 6px; border-color: #ff3b30; color: #ff3b30; background: rgba(255, 59, 48, 0.08); cursor: pointer; margin-left: auto;">INSTALL</button>
+          <div class="settings-actions">
+            <button class="cyber-btn" id="btn-save-settings">Save Changes</button>
+            <span id="manual-check-status"></span>
           </div>
 
-          <button class="cyber-btn" id="btn-check-updates-manual" style="background: rgba(0, 242, 254, 0.03); margin-top: 8px; font-size: 8px; letter-spacing: 1px;">CHECK FOR UPDATES</button>
-          <span id="manual-check-status" style="font-size: 7px; color: var(--text-dim); margin-top: 2px; display: block; text-align: center; font-family: var(--font-mono);"></span>
-
-          <button class="cyber-btn" id="btn-save-settings" style="margin-top: 8px;">COMMIT CHANGES</button>
+          <!-- Dynamic update banner inside settings -->
+          <div class="update-banner" id="update-banner" style="display: none;">
+            <span class="banner-text">Update available: <span id="update-banner-ver">v0.0.0</span></span>
+            <button class="cyber-btn" id="btn-banner-update">Install</button>
+          </div>
         </div>
       </div>
 
-      <!-- Firmware Update Alert Modal -->
+      <!-- Update Modal -->
       <div class="update-overlay" id="update-prompt">
         <div class="update-modal">
           <div class="update-header">
-            <span class="hazard-blink">⚠</span>
-            <span class="tech-text" style="color: #ff3b30; text-shadow: 0 0 8px #ff3b30;">FIRMWARE UPDATE DETECTED</span>
-            <span class="hazard-blink">⚠</span>
+            <span class="tech-text">Update Available</span>
           </div>
           <div class="update-body">
-            <p>An update to version <span id="update-version-val" style="color: var(--primary-color);">x.y.z</span> is available.</p>
-            <p class="warning-text" style="font-size: 7px; color: #ff3b30; margin-top: 6px; letter-spacing: 1px;">APPLYING UPDATE WILL REBOOT CHRONO UNIT.</p>
+            <p>Version <span id="update-version-val" style="color: var(--primary-color);">x.y.z</span> has been released.</p>
+            <p class="warning-text">The application will reboot after installing.</p>
           </div>
           <div class="update-controls">
-            <button class="cyber-btn" id="btn-confirm-update" style="border-color: #ff3b30; color: #ff3b30; background: rgba(255, 59, 48, 0.1);">COMMIT UPDATE</button>
-            <button class="cyber-btn cancel-btn" id="btn-cancel-update" style="border-color: var(--text-dim); color: var(--text-dim); background: transparent;">ABORT</button>
+            <button class="cyber-btn" id="btn-confirm-update">Install Now</button>
+            <button class="cyber-btn cancel-btn" id="btn-cancel-update">Later</button>
           </div>
         </div>
       </div>
