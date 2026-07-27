@@ -95,10 +95,10 @@ npm run tauri build
 
 ## 🛠️ Tech Stack
 
-* **[Tauri 2](https://tauri.app/)** — Native shell & Rust backend
-* **Tokio & Windows Named Pipes** — Asynchronous real-time IPC
-* **JSON5** — AST-aware, comment-tolerant config parsing
-* **Vanilla HTML5 / CSS3 / JavaScript** — Glassmorphism UI styling
+* **[Tauri 2](https://tauri.app/)** — Native shell & Rust backend.
+* **Tokio & Windows Named Pipes** — Asynchronous real-time IPC.
+* **JSON5** — AST-aware, comment-tolerant config parsing.
+* **Vanilla HTML5 / CSS3 / JavaScript** — Glassmorphism UI styling.
 
 ---
 
