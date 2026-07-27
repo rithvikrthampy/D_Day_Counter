@@ -662,6 +662,19 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(0.98);
 }
 
+.cyber-btn.secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  box-shadow: none;
+}
+
+.cyber-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-focus);
+}
+
+
 .settings-actions {
   margin-top: auto;
   display: flex;
