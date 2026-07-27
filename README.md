@@ -6,7 +6,16 @@ Built with [Tauri 2](https://tauri.app/) (Rust + Web frontend), it is lightweigh
 
 ---
 
+## 📸 Screenshots
+
+| Widget Face | Settings Panel |
+| :---: | :---: |
+| ![The countdown widget](screenshots/widget.png) | ![The settings panel](screenshots/settings.png) |
+
+---
+
 ## 🌟 Key Features
+
 
 * ⏳ **Live Countdown Display**: Tracks days, hours, minutes, and seconds in real-time.
 * 🤖 **AI Assistant Integration (MCP Protocol)**: Control your widget directly from **Claude Desktop**, **Cursor**, **Antigravity**, or **VS Code**! Create timers, switch presets, and adjust settings via AI.
