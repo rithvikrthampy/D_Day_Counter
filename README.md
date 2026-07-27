@@ -1,79 +1,98 @@
 # D-daycounter
 
-A sci‑fi themed **desktop countdown widget** for Windows. Set a target date and
-D‑daycounter shows a live, always‑available countdown in a frameless neon panel —
-perfect for launches, deadlines, exams, trips, or any "D‑day".
+A sleek, modern **glassmorphic desktop countdown widget** for Windows. Set target dates for launches, deadlines, exams, trips, or milestones — D-daycounter shows a live, always-available countdown right on your desktop with modern glassmorphism aesthetics and neon accents.
 
-Built with [Tauri 2](https://tauri.app/) (Rust + web frontend), so it's tiny,
-fast, and runs as a native Windows app.
+Built with [Tauri 2](https://tauri.app/) (Rust + Web frontend), it is lightweight, fast, and integrates natively with Windows and AI Assistants via the **Model Context Protocol (MCP)**.
 
-## Screenshots
+---
 
-| Widget | Settings |
-| --- | --- |
-| ![The countdown widget](screenshots/widget.png) | ![The settings panel](screenshots/settings.png) |
+## 🌟 Key Features
 
-## Features
+* ⏳ **Live Countdown Display**: Tracks days, hours, minutes, and seconds in real-time.
+* 🤖 **AI Assistant Integration (MCP Protocol)**: Control your widget directly from **Claude Desktop**, **Cursor**, **Antigravity**, or **VS Code**! Create timers, switch presets, and adjust settings via AI.
+* ⚡ **1-Click Zero-Tech AI Setup**: Simply toggle **"Enable AI Control"** in Settings — the app automatically configures Claude Desktop and Cursor with 1 click. No terminal commands or manual JSON editing needed.
+* ⚡ **Windows Named Pipe IPC**: Real-time live UI updates between connected AI models and the desktop widget.
+* 📋 **Multiple Timeline Presets**: Store, manage, and switch between multiple countdown timers.
+* 🎨 **Four Neon Energy Themes**: Cyan, Amber, Mint, and Orchid.
+* 📌 **Always-on-Top & System Tray**: Keep the widget pinned above windows or collapse it cleanly to the Windows taskbar tray.
+* 🚀 **Autostart on Boot**: Automatically launches at login so your timers are always ready.
+* 🔄 **Built-in Auto-Updater**: Automatically checks for releases and includes a manual "Check for Updates" button in Settings.
 
-- ⏳ **Live countdown** to any target date & time — days, hours, minutes, seconds.
-- 📊 **"Time tactical index"** progress bar showing how much time has elapsed.
-- 🎨 **Four neon themes** — Cyber Cyan, Solar Orange, Bio Green, Neon Pink.
-- 🏷️ **Custom event name** for whatever you're counting down to.
-- 📌 **Always‑on‑top** toggle to keep the widget above other windows.
-- 🚀 **Autostart on boot** so the widget is ready every time you log in.
-- 🪟 **Frameless & draggable** — grab the header to move it anywhere.
-- 💾 **Settings persist** locally between launches.
+---
 
-## Download & install
+## 🤖 AI Assistant Control (MCP Protocol)
 
-Grab the latest installer from the [**Releases**](https://github.com/rithvikrthampy/D_Day_Counter/releases/latest) page:
+D-Day Counter includes an embedded Model Context Protocol (MCP) server. Connected AI assistants can invoke 5 powerful tools:
 
-- **`D-daycounter_x64-setup.exe`** — recommended Windows installer (NSIS).
-- **`D-daycounter_x64_en-US.msi`** — alternative Windows Installer package.
+| Tool | Description | Example AI Command |
+|---|---|---|
+| `create_timer` | Add a countdown target using ISO timestamp or relative offsets (`duration_hours`, `duration_minutes`, `duration_seconds`). | *"Set a 45 minute countdown for my study session"* |
+| `list_timers` | Inspect all timers, target dates, and remaining seconds. | *"What countdowns do I have active?"* |
+| `switch_timer` | Change the displayed timer on the widget by title or index. | *"Switch the display to Product Launch"* |
+| `delete_timer` | Remove a countdown timer. | *"Remove the test timer"* |
+| `update_settings` | Control opacity, themes, always-on-top, autostart, and window visibility. | *"Set widget theme to solar orange and bring it to top"* |
 
-> Because the app isn't code‑signed yet, Windows SmartScreen may show a
-> "Windows protected your PC" prompt on first run. Click **More info →
-> Run anyway** to proceed.
+### 1-Click Automatic Setup
+1. Open D-Day Counter Settings (⚙).
+2. Toggle **Enable AI Control (Claude, Cursor)** to **ON**.
+3. That's it! The app automatically configures installed AI apps on your computer.
 
-After installing, launch **D-daycounter**, open settings (⚙), set your event and
-target date, and optionally enable **Autostart on boot**.
+### Manual MCP Setup
+If configuring an AI client manually, point to the installed executable with `--mcp`:
 
-## Build from source
+```json
+{
+  "mcpServers": {
+    "d-day-counter": {
+      "command": "C:\\Program Files\\D-daycounter\\D-daycounter.exe",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+---
+
+## 🚀 Download & Install
+
+Download the latest installer from the [**Releases**](https://github.com/rithvikrthampy/D_Day_Counter/releases/latest) page:
+
+* **`D-daycounter_x64-setup.exe`** — recommended Windows installer (NSIS).
+* **`D-daycounter_x64_en-US.msi`** — alternative Windows Installer package.
+
+> *Note: Windows SmartScreen may present a first-run prompt if the binary is un-signed. Click **More info → Run anyway** to proceed.*
+
+---
+
+## 🛠️ Build from Source
 
 ### Prerequisites
+* [Rust](https://www.rust-lang.org/tools/install) (stable)
+* [Node.js](https://nodejs.org/) (v18+)
+* Windows Build Tools & Webview2
 
-- [Rust](https://www.rust-lang.org/tools/install) (stable)
-- [Node.js](https://nodejs.org/) 18+
-- Windows build tools for Tauri — see the
-  [Tauri prerequisites guide](https://tauri.app/start/prerequisites/)
-  (Microsoft C++ Build Tools + WebView2, which ships with Windows 11).
-
-### Run in development
-
+### Run in Development
 ```bash
 npm install
 npm run tauri dev
 ```
 
-### Build the installers
-
+### Build Installers
 ```bash
 npm run tauri build
 ```
 
-The installers are written to:
+---
 
-```
-src-tauri/target/release/bundle/nsis/D-daycounter_<version>_x64-setup.exe
-src-tauri/target/release/bundle/msi/D-daycounter_<version>_x64_en-US.msi
-```
+## 🛠️ Tech Stack
 
-## Tech stack
+* **[Tauri 2](https://tauri.app/)** — Native shell & Rust backend
+* **Tokio & Windows Named Pipes** — Asynchronous real-time IPC
+* **JSON5** — AST-aware, comment-tolerant config parsing
+* **Vanilla HTML5 / CSS3 / JavaScript** — Glassmorphism UI styling
 
-- **[Tauri 2](https://tauri.app/)** — native shell & Rust backend
-- **Rust** — autostart via the Windows registry (`HKCU\...\Run`)
-- **Vanilla HTML / CSS / JavaScript** — no frontend framework
+---
 
-## License
+## 📄 License
 
 Released under the [MIT License](LICENSE).
