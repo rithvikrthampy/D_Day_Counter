@@ -149,6 +149,15 @@
               <span>Launch on startup</span>
             </label>
           </div>
+
+          <div class="toggle-group">
+            <label for="input-mcp-enabled" class="checkbox-label">
+              <input type="checkbox" id="input-mcp-enabled" />
+              <span>Enable AI Control (Claude, Cursor)</span>
+            </label>
+            <div id="mcp-status-msg" style="font-size: 8px; color: var(--primary-color); margin-top: 2px; line-height: 1.3;"></div>
+          </div>
+
           
           <!-- Hidden inputs to prevent JS crashes on removed CRT/Grid/Sound elements -->
           <div style="display: none;">

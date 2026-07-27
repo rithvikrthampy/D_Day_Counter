@@ -1,13 +1,23 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 
+pub mod mcp_types;
+pub mod state_manager;
+pub mod named_pipe;
+pub mod mcp_server;
+pub mod mcp_installer;
+
+pub use mcp_server::run_mcp_server;
+pub use mcp_installer::set_mcp_registration;
+
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager,
+    Emitter, Manager,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_updater::UpdaterExt;
 use std::sync::Mutex;
+use mcp_types::{IpcRequest, IpcResponse, Preset};
 
 struct UpdateState {
     pending_update: Mutex<Option<tauri_plugin_updater::Update>>,
@@ -27,8 +37,6 @@ fn registered_autostart_path() -> Option<String> {
         return None;
     }
 
-    // A matching line looks like:
-    //     SciFiChronoWidget    REG_SZ    C:\path\to\app.exe
     let text = String::from_utf8_lossy(&output.stdout);
     for line in text.lines() {
         if line.contains(RUN_VALUE) {
@@ -50,11 +58,6 @@ fn set_autostart(enable: bool) -> Result<(), String> {
         .to_string_lossy()
         .to_string();
 
-    // Refuse to register a transient build-output binary. Those live under
-    // target\debug or target\release: the debug one needs the dev server and
-    // both get wiped by `cargo clean`, so autostarting them shows a blank /
-    // "can't reach this page" window at boot. Autostart must point at the
-    // installed app.
     if enable {
         let lowered = exe_path.to_lowercase();
         if lowered.contains("\\target\\debug\\") || lowered.contains("\\target\\release\\") {
@@ -89,9 +92,6 @@ fn set_autostart(enable: bool) -> Result<(), String> {
 
 #[tauri::command]
 fn is_autostart_enabled() -> bool {
-    // Only report "enabled" when the registered path matches *this* running
-    // executable. A stale entry pointing elsewhere (e.g. an old dev build)
-    // reads as disabled, so re-enabling rewrites it to the correct path.
     let current = match std::env::current_exe() {
         Ok(p) => p,
         Err(_) => return false,
@@ -110,6 +110,15 @@ fn is_autostart_enabled() -> bool {
     }
 }
 
+#[tauri::command]
+fn set_mcp_enabled(enable: bool) -> Result<Vec<String>, String> {
+    mcp_installer::set_mcp_registration(enable)
+}
+
+#[tauri::command]
+fn is_mcp_enabled() -> bool {
+    mcp_installer::is_mcp_registered()
+}
 
 #[tauri::command]
 async fn check_for_updates(app: tauri::AppHandle, state: tauri::State<'_, UpdateState>) -> Result<Option<String>, String> {
@@ -173,6 +182,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_autostart,
             is_autostart_enabled,
+            set_mcp_enabled,
+            is_mcp_enabled,
             check_for_updates,
             start_update_install
         ])
@@ -240,6 +251,109 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // 4. Start Windows Named Pipe IPC Server
+            let handle = app.handle().clone();
+            named_pipe::start_ipc_server(move |req| {
+                let mut state = state_manager::load_state();
+                let mut message = "OK".to_string();
+                let mut success = true;
+
+                match req {
+                    IpcRequest::GetState => {
+                        return IpcResponse {
+                            success: true,
+                            message: "State retrieved".to_string(),
+                            data: Some(serde_json::to_value(&state).unwrap_or_default()),
+                        };
+                    }
+                    IpcRequest::SetState(new_state) => {
+                        state = new_state;
+                    }
+                    IpcRequest::CreateTimer { title, target_date, theme } => {
+                        let new_preset = Preset {
+                            id: format!("preset_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis()),
+                            event_name: title,
+                            target_date,
+                            creation_date: "".to_string(),
+                        };
+                        state.presets.push(new_preset);
+                        state.current_preset_index = (state.presets.len() as i32) - 1;
+                        if let Some(t) = theme {
+                            state.settings.theme = t;
+                        }
+                    }
+                    IpcRequest::SwitchTimer { identifier } => {
+                        if let Ok(idx) = identifier.parse::<usize>() {
+                            if idx < state.presets.len() {
+                                state.current_preset_index = idx as i32;
+                            } else {
+                                success = false;
+                                message = "Timer index out of bounds".to_string();
+                            }
+                        } else if let Some(idx) = state.presets.iter().position(|p| p.id == identifier || p.event_name.to_lowercase().contains(&identifier.to_lowercase())) {
+                            state.current_preset_index = idx as i32;
+                        } else {
+                            success = false;
+                            message = "Timer not found".to_string();
+                        }
+                    }
+                    IpcRequest::DeleteTimer { identifier } => {
+                        let initial_len = state.presets.len();
+                        state.presets.retain(|p| p.id != identifier && !p.event_name.to_lowercase().contains(&identifier.to_lowercase()));
+                        if state.presets.len() < initial_len {
+                            if state.presets.is_empty() {
+                                state.current_preset_index = -1;
+                            } else if state.current_preset_index >= state.presets.len() as i32 {
+                                state.current_preset_index = (state.presets.len() as i32) - 1;
+                            }
+                        } else {
+                            success = false;
+                            message = "Timer not found".to_string();
+                        }
+                    }
+                    IpcRequest::UpdateSettings { opacity, theme, always_on_top, autostart, window_visibility } => {
+                        if let Some(op) = opacity {
+                            state.settings.widget_opacity = op.clamp(20, 100);
+                        }
+                        if let Some(th) = theme {
+                            state.settings.theme = th;
+                        }
+                        if let Some(aot) = always_on_top {
+                            state.settings.always_on_top = aot;
+                            if let Some(window) = handle.get_webview_window("main") {
+                                let _ = window.set_always_on_top(aot);
+                            }
+                        }
+                        if let Some(as_val) = autostart {
+                            state.settings.autostart = as_val;
+                            let _ = set_autostart(as_val);
+                        }
+                        if let Some(vis) = window_visibility {
+                            if let Some(window) = handle.get_webview_window("main") {
+                                match vis.as_str() {
+                                    "show" => { let _ = window.show(); let _ = window.set_focus(); },
+                                    "hide" => { let _ = window.hide(); },
+                                    "minimize" => { let _ = window.minimize(); },
+                                    "unminimize" => { let _ = window.unminimize(); let _ = window.show(); let _ = window.set_focus(); },
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if success {
+                    let _ = state_manager::save_state(&state);
+                    let _ = handle.emit("mcp-state-updated", serde_json::to_value(&state).unwrap_or_default());
+                }
+
+                IpcResponse {
+                    success,
+                    message,
+                    data: Some(serde_json::to_value(&state).unwrap_or_default()),
+                }
+            });
 
             Ok(())
         })

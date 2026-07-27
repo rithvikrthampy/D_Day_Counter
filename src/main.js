@@ -449,7 +449,43 @@ window.addEventListener("DOMContentLoaded", () => {
         if (inputAutostart) inputAutostart.checked = autostart;
       })
       .catch(err => console.error("Error reading autostart status: ", err));
+
+    const inputMcpEnabled = document.getElementById("input-mcp-enabled");
+    const mcpStatusMsg = document.getElementById("mcp-status-msg");
+    if (inputMcpEnabled) {
+      invoke("is_mcp_enabled")
+        .then(enabled => {
+          inputMcpEnabled.checked = enabled;
+          if (enabled && mcpStatusMsg) {
+            mcpStatusMsg.textContent = "AI Control Active (Claude & Cursor ready)";
+          }
+        })
+        .catch(err => console.error("Error reading MCP status: ", err));
+
+      inputMcpEnabled.addEventListener("change", () => {
+        AudioSynth.playClick();
+        const enable = inputMcpEnabled.checked;
+        if (mcpStatusMsg) mcpStatusMsg.textContent = "Updating AI configuration...";
+        invoke("set_mcp_enabled", { enable })
+          .then(apps => {
+            if (enable) {
+              const list = apps && apps.length > 0 ? apps.join(", ") : "AI Applications";
+              if (mcpStatusMsg) mcpStatusMsg.textContent = `Configured for: ${list}`;
+              logToConsole("AI CONTROL ENABLED");
+            } else {
+              if (mcpStatusMsg) mcpStatusMsg.textContent = "AI Control Disabled.";
+              logToConsole("AI CONTROL DISABLED");
+            }
+          })
+          .catch(err => {
+            console.error("Failed to set MCP registration:", err);
+            if (mcpStatusMsg) mcpStatusMsg.textContent = "Failed to update AI config.";
+            inputMcpEnabled.checked = !enable;
+          });
+      });
+    }
   }
+
   
   // Load local settings
   loadState();
@@ -769,4 +805,37 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
   }
+
+  // Listen for real-time MCP state updates from Rust Named Pipe IPC
+  if (window.__TAURI__ && window.__TAURI__.event) {
+    window.__TAURI__.event.listen("mcp-state-updated", (event) => {
+      console.log("MCP State updated via IPC:", event.payload);
+      if (event.payload && event.payload.presets) {
+        presets = event.payload.presets.map(p => ({
+          name: p.event_name,
+          targetDate: p.target_date,
+          creationDate: p.creation_date || new Date().toISOString()
+        }));
+        if (typeof event.payload.current_preset_index === 'number') {
+          currentPresetIndex = event.payload.current_preset_index;
+          if (presets[currentPresetIndex]) {
+            eventName = presets[currentPresetIndex].name;
+            targetDate = presets[currentPresetIndex].targetDate;
+            creationDate = presets[currentPresetIndex].creationDate;
+          }
+        }
+        if (event.payload.settings) {
+          if (event.payload.settings.theme) themeClass = event.payload.settings.theme;
+          if (typeof event.payload.settings.always_on_top === 'boolean') alwaysOnTop = event.payload.settings.always_on_top;
+          if (typeof event.payload.settings.widget_opacity === 'number') widgetOpacity = event.payload.settings.widget_opacity;
+        }
+        saveState();
+        applyConfigurations();
+        updateCountdown();
+        renderPresets();
+        logToConsole("MCP SYNC: STATE MODIFIED BY AI");
+      }
+    });
+  }
 });
+
