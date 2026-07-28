@@ -13,7 +13,7 @@ where
 {
     let handler = std::sync::Arc::new(handler);
 
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         let mut first_instance = true;
         loop {
             let server_res = if first_instance {
@@ -29,7 +29,8 @@ where
                     first_instance = false;
                     if server.connect().await.is_ok() {
                         let handler_clone = handler.clone();
-                        tokio::spawn(async move {
+                        tauri::async_runtime::spawn(async move {
+
                             let mut buffer = Vec::new();
                             let mut tmp = [0u8; 4096];
 
